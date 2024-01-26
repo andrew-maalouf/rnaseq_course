@@ -31,7 +31,7 @@ cd $READ_DIR
 
 #run stringtie
 #-–rf tells StringTie that our data is stranded and to use the correct strand specific mode (i.e. assume a stranded library fr-firststrand).
-#-p 4 tells stringtie to use eight CPUs
+#-p 6 tells stringtie to use six CPUs
 #-o tells stringtie to write output to a particular file or directory
 #-G tells stringtie where to find reference gene annotations. It will use these annotations to gracefully merge novel isoforms (for de novo runs) and known isoforms and maximize overall assembly quality.
 
