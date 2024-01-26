@@ -13,14 +13,23 @@
   /data/courses/rnaseq_course/lncRNAs/Project1/users/amaalouf/step4/kallisto_expression
 
 📂 Files content:
+  
   1- abundance_stats.txt: quantification results statistics
+  
   2- differential_expression_stats.txt: differential expression results statistics
+  
   3- end_table.tsv: table including all 20066 novel transcripts on reference chromosomes with their respective transcript level differential expression results + 5' 3' completeness + intergenic + coding potential
+  
   4- gene_level_results.txt: differential expression full sleuth results on gene level
+  
   5- lnc_diff_signif_intergenic.tsv: list of all intergenic novel transcripts with qval < 0.05 filtered out from end_table.tsv
+  
   6- my_stat.o: statistics of merged transcriptome assembly
+  
   7- possible_candidates.tsv: list of all intergenic novel transcripts with qval < 0.05 and |log2fc| > 1 filtered out from end_table
+  
   8- transcript_level_results.tsv: differential expression full sleuth results on transcript level
+  
   9- written_answers.txt: explicit answers to step6 questions
 
 
