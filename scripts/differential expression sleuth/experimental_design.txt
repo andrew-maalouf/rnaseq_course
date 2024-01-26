@@ -1,0 +1,7 @@
+sample_id	condition
+P1	parental
+P2	parental
+P3	parental
+H_1_1	holoclonal
+H_1_2	holoclonal
+H_1_5	holoclonal

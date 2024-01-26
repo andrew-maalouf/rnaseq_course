@@ -1,0 +1,371 @@
+inspired by imported walkthrough and website: https://hbctraining.github.io/DGE_workshop_salmon/lessons/09_sleuth.html
+and for gene differential expression:
+https://pachterlab.github.io/sleuth_walkthroughs/pval_agg/analysis.html
+and the only difference from transcript level is almost when setting the sleuth_prep
+
+
+Requirements for this walkthrough:
+
+- `cowplot` for making prettier plots and plots with grids. Available in CRAN:  `install.packages('cowplot')`.
+- `biomaRt` for extracting the Ensembl transcript to gene mapping.
+
+To install the package:
+
+```{r eval=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install()
+
+BiocManager::install(c("biocLite","biomaRt"))
+```
+
+My analysis was run using:
+biomaRt_2.58.0
+cowplot_1.1.2
+sleuth_0.30.1
+EnhancedVolcano_1.20.0
+ggrepel_0.9.4
+ggplot2_3.4.4
+
+
+```{r}
+library(biomaRt)
+```
+
+The walthrough begins after the RNA-Seq samples have been quantified with kallisto. Kallisto is very fast in quantifying samples. Kallisto quantifications have been downloaded for the relevant samples.
+Let's load the requisite packages:
+
+```{r warning=FALSE}
+suppressMessages({
+  library('cowplot')
+  library('sleuth')
+})
+```
+
+## Parsing metadata
+
+A sleuth analysis is dependent on a metadata file, which describes the experimental design, the sample names, conditions and covariates. The metadata file is external to sleuth, and must be prepared prior to analysis. A metadata file should have been downloaded along with the kallisto quantifications.  The first step in a sleuth analysis is loading of the metadata file. You might need the path in read_table below to where you have downloaded the kallisto dataset, so that the path directs to the sample_table.txt. We then select the relevant columns of the metadata.
+
+
+```{r}
+metadata <- read.table('C:/Users/user/Desktop/UniBe/Semester_1/Bern/RNA_sequencing/Project1_lncRNA/step5_differential_expression/running_sleuth/experimental_design.txt', sep='\t', header=TRUE, stringsAsFactors = FALSE)
+metadata <- dplyr::select(metadata, c('sample_id', 'condition'))
+```
+
+```{r}
+head(metadata, n = 20)
+```
+
+This file describes the experimental design.
+We are concerned with one major experimental condition: holoclonal vs parental. Combinatorially, we could have a possible of 2^1 = 2 conditions. For each condition, three biological replicates were sequenced, so we have a total of 6 samples.
+The column 'condition' lists the subtype of cell: holoclonal or parental. 
+The 'sample_id' column is the replicate name. The kallisto quantifications are titled with these replicates names.
+
+
+Finally, we add the path names of the kallisto output directories to the metadata table. We use the replicate names listed under sample_id to identify the folders we must use for the correpsonding kallisto quantifications:
+
+```{r}
+metadata <- dplyr::mutate(metadata,
+  path = file.path('C:/Users/user/Desktop/UniBe/Semester_1/Bern/RNA_sequencing/Project1_lncRNA/step5_differential_expression/running_sleuth/kallisto_results', sample_id))
+head(metadata)
+```
+
+It is important to spot check the metadata file again to make sure that the kallisto runs correspond to the accession numbers in the table, so that each row is associated with the correct sample.
+
+We rename the 'sample_id' column to 'sample.' 'sample' and 'path' are the two column names that sleuth will need to find the sample name and the path of the kallisto qunatifications.
+
+```{r}
+metadata <- dplyr::rename(metadata, sample = sample_id)
+head(metadata)
+```
+
+## Provide the model design
+Now that we have the metadata and location of the count estimates, we can input our design formula to determine the covariates and/or confounders that should be included in your experimental design model. Sleuth can be used to analyze multiple conditions from complex experimental designs.
+
+Within Sleuth, models are written similar to DESeq2. Since the only condition we plan to test is our sample type, our design formula is very simple:
+
+```{r}
+design <- ~ condition
+```
+
+
+## Query annotables dataset to obtain the corresponding Ensembl transcript/gene IDs
+## Associating transcripts to genes
+
+The sample quantifications performed by kallisto have produced transcript abundance and count estimates.
+These have been parsed by sleuth in the steps just performed, however sleuth does not "know" about genes yet.
+
+The last component to include for our analysis is the annotable to obtain the transcript/gene IDs and gene names for annotation of results. There are conversion objects available to us by just loading the annotables library.
+
+Again, we will need to provide column names that are consistent with what Sleuth is expecting.
+
+For this, I will use my own csv file.
+
+This dataframe contains gene_id, transcript IDs, gene names and biotype, without header, so I will have to add a header for sleuth to work with it.
+
+```{r}
+my_csv_file <- read.csv('C:/Users/user/Desktop/UniBe/Semester_1/Bern/RNA_sequencing/Project1_lncRNA/table.csv', sep = " ", header = FALSE, stringsAsFactors = FALSE)
+
+#column names are V1 V2 V3 V4; hence, rename them for myself
+my_csv_file <- dplyr::rename(my_csv_file, gene_id = V2, transcript_id = V1, gene_name = V3, biotype = V4)
+
+#now rename it properly for sleuth (it could have been done since the start, but i like it when i see it in front of me)
+my_csv_file <- dplyr::rename(my_csv_file, target_id = transcript_id, ens_gene = gene_id, ext_gene = gene_name)
+ 
+#keep the first 3 columns, without biotype
+my_csv_file <- dplyr::select(my_csv_file, c('target_id', 'ens_gene', 'ext_gene', 'biotype'))
+ 
+head(my_csv_file)
+```
+
+The resulting table contains Ensembl gene names ('ens_gene') and the associated transcripts ('target_id'). Note that the gene-transcript mapping must be compatible with the transcriptome used with kallisto.
+In other words, to use Ensembl transcript-gene associations kallisto was run using the Ensembl transcriptome.
+
+
+## Fit the sleuth model
+
+Now we need to tell sleuth both about the kallisto results and the gene names (and gene description/metadata) we obtained. The "sleuth_prep" function does this
+
+Fit the transcript abundance data to the Sleuth model
+Using the sleuth_prep() function, the counts are normalized and filtered, then merged with the metadata. In addition, the bootstraps for each transcript are summarized. This function can take a bit of time, but there is an option (ncores) to split across multiple processors.
+
+NOTE: By default the transformation of counts is natural log, which would make the output fold changes somewhat more difficult to interpret. By specifying the transformation_function to be log2(x + 0.5) we are ensuring our output fold changes are log2.
+
+
+
+HERE I am requesting the gene differential expression to be done by gene level aggregation and not p value aggregation ( gene_mode = TRUE, and set aggregation_column to ens_gene)
+
+```{r}
+# Create sleuth object for analysis 
+
+so <- sleuth_prep(metadata, 
+                  full_model = design, 
+                  target_mapping = my_csv_file,
+                  aggregation_column = 'ens_gene',
+                  gene_mode = TRUE,
+                  read_bootstrap_tpm = TRUE,
+                  extra_bootstrap_summary = TRUE,
+                  transformation_function = function(x) log2(x + 0.5))
+```
+
+We want to examine what genes are differential as a result of different subtypes. In other words, we will statistically test for genes that are affected by subtype. Thus we will fit two models. The first is known as the “reduced model”, which includes the parameter corresponding to the experimental condition we are controlling for subtype. The second model is known as the full model, and it includes all parameters. We will compare the full model to the reduced model with the likelihood ratio test (lrt function). Using the likelihood ratio test, sleuth identifies genes whose abundances are significantly better explained when subtype is taken into account. The code for performing the fitting are:
+
+```{r}
+so <- sleuth_fit(so, ~condition, 'full')
+so <- sleuth_fit(so, ~1, 'reduced')
+so <- sleuth_lrt(so, 'reduced' , 'full')
+```
+
+let's see if we're satisfied now
+
+```{r}
+models(so)
+```
+
+
+## Step 3: Test significant differences between conditions using the Wald test
+
+###Examine Sleuth PCA
+
+next, we should check to see if our samples (and replicates) cluster on PCA (as should expect) or if there are outliers. When we plot by condition, we'd expect that similar colors group together.
+
+```{r}
+library(cowplot)
+ggplot2::theme_set(theme_cowplot())
+plot_pca(so, color_by = "condition", text_labels = F)
+```
+The	results	can	be	extracted	from	the	sleuth	object	with:
+```{r}
+sleuth_table	= sleuth_results(so,	'reduced:full',	'lrt',	
+show_all=FALSE)	
+```
+
+To	get	the	transcripts	for	which	the	full	model	is	significantly	more	likely:
+```{r}
+sleuth_significant	<- sleuth_table[sleuth_table$qval<=0.05,]
+head(sleuth_significant)
+```
+
+The	likelihood	ratio	test	does	not	give	a	fold	change	for	the	transcript,	just	whether	
+it	is	differentially	expressed	or	not.	Sleuth	provides	another	test	called	Wald	test,	
+which	returns	a	‘b’	value	that	“it	is	analogous	to,	but	not	equivalent	to,	the	foldchange.”
+
+At this step in the workflow, we need to specify which level we want to compare against the base level (use the name given for the coefficients from models(so)):
+
+```{r}
+# Wald test for differential expression of isoforms
+
+oe <- sleuth_wt(so, 
+                which_beta = 'conditionparental',
+                which_model = 'full')
+
+# output results
+
+sleuth_results_oe <- sleuth_results(oe, 
+                                    test = 'conditionparental',
+                                    'wt',
+                                    show_all = TRUE)
+```
+
+```{r}
+head(sleuth_results_oe, 20)
+```
+
+## Obtaining gene-level differential expression results under likelihood test
+When running the command ‘sleuth_results,’ sleuth uses the p-values from comparing transcripts to make a gene-level determination and perform gene differential expression.
+
+```{r}
+sleuth_table_gene <- sleuth_results(so, 'reduced:full', 'lrt', show_all = FALSE)
+sleuth_table_gene <- dplyr::filter(sleuth_table_gene, qval <= 0.05)
+```
+The most significantly differential genes are
+
+```{r}
+head(sleuth_table_gene, 20)
+```
+
+
+## Exploring transcript-level expression between samples
+Exploratory analyses:
+Now that we have our results, we can perform some exploratory analyses, such as PCA, heatmap, and distributions of counts between conditions. By default, these plots will use the sleuth-normalized est_counts (not the log2 transformed values).
+
+PCA: There are multiple functions to explore the variation in the dataset explained by the different PCs.
+
+```{r}
+plot_pc_variance(oe)
+```
+
+
+```{r}
+plot_loadings(oe)
+```
+
+Heatmap: The heatmap plot is shaded with the Jensen-Shannon divergence values. Therefore, lower divergence values represent samples that are more similar to each other.
+
+```{r}
+plot_sample_heatmap(oe,use_filtered = T, cluster_bool = F)
+```
+
+
+Count distributions: There is a histogram plot to explore count distributions between sample groups, which should be similar to each other when performing DE testing. The count distributions represent the proportion of genes (on the y-axis) associated with the number of counts (designated on the x-axis):
+```{r}
+plot_group_density(oe, 
+                   use_filtered = FALSE, 
+                   units = "tpm",
+                   trans = "log", 
+                   grouping = "condition")
+```
+
+As we know, most genes have few counts, but we filter these genes prior to performing DE analysis. If we want to look at the distributions of the filtered genes used for DE analysis, we could change the use_filtered argument to TRUE.
+
+```{r}
+plot_group_density(oe, 
+                   use_filtered = TRUE, 
+                   units = "tpm",
+                   trans = "log", 
+                   grouping = "condition")
+```
+
+
+
+
+Results analyses:
+There are also functions to explore the results. For example, we can perform an expression heatmap for select transcripts:
+```{r}
+library(dplyr)
+library(magrittr)
+
+sig_transcripts <- sleuth_results_oe %>% 
+  filter(qval < 0.05)
+  
+plot_transcript_heatmap(oe, 
+                        transcripts = sig_transcripts$target_id[1:20])
+```
+
+Sleuth also has some handy functions to plot expression of transcripts with bootstrap variation to visualize both biological and technical variation for selected transcripts:
+
+```{r}
+# Plotting
+
+plot_bootstrap(oe, 
+               target_id = "MSTRG.1579", 
+               units = "est_counts", 
+               color_by = "condition")
+
+plot_bootstrap(oe, 
+               target_id = "ENSG00000091583.11", 
+               units = "est_counts", 
+               color_by = "condition")
+
+
+
+```
+
+
+Sleuth also offers us the option to explore the data and results interactively using a web interface.
+```{r}
+sleuth_live(oe)
+```
+
+
+This will open a new browser that runs the R shiny app. One can visualize the transcript dynamics that resulted in these gene differential results under 'analysis' -> 'gene view.' Enterring the Ensembl gene name and selecting 'ens_gene' from the 'genes from' dropdown will display each transcript corresponding to that gene. 'analyses' -> 'test table' will provide the same results as sleuth_table.  As we previously mentioned, because our gene results are based on the transcript results, there is no need to visualize gene abundances separately. Instead, one can use the transcript abundances as the evidence for the gene level differential expression.
+
+
+
+DONE
+
+now I'll add here some code to get volcano plot 
+
+first we will install "enhancedvolcano"
+
+```{r}
+if (!requireNamespace('BiocManager', quietly = T))
+  install.packages('BiocManager')
+
+BiocManager::install('EnhancedVolcano')
+```
+
+now i load it
+
+```{r}
+library(EnhancedVolcano)
+```
+
+now let's plot it
+1: name of our data table
+2: x values : log2FoldChange -> B
+3: y p adjusted aka qval
+
+
+```{r}
+EnhancedVolcano(sleuth_results_oe, 
+                x = "b", 
+                y = "qval", 
+                lab = sleuth_results_oe$ext_gene,
+                subtitle = bquote(italic(Transcript~Level)),
+                drawConnectors = T,
+                pointSize = 1.0,
+                labSize = 5.0,
+                legendPosition = 'none'
+                )
+```
+
+
+now if i want to label specific genes only, i start by making a vector
+```{r}
+select <- c("CD44", "ALCAM", "SOX2", "IL6", "AXL", "ABCG2", "COL5A1", "POU5F1", "CDH1", "CDH17", "MMP2", "CD274", "EPCAM", "MYC", "MYCL", "TGFB2", "PDCD1LG2", "CDH1", "CTSB", "ZEB2")
+EnhancedVolcano(sleuth_results_oe, 
+                x = "b", 
+                y = "qval", 
+                lab = sleuth_results_oe$ext_gene,
+                subtitle = bquote(italic(Transcript~Level)),
+                drawConnectors = T,
+                pointSize = 2.0,
+                labSize = 4.0,
+                legendPosition = 'none',
+                selectLab = select,
+                pCutoff = 0.05,
+                FCcutoff = 1)
+```
+
+DONE
