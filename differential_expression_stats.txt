@@ -1,0 +1,17 @@
+Disclaimer: upregulated means upregulated in holoclones./// differentially expressed initial conditions are qval < 0.05 and |log2fc| > 1
+
+Transcript level stats
+Out of 274605 transcripts (-1), 76502 have values for differential expression
+2823 are differentially expressed of which:
+Out of all differentially expressed transcripts:
+162 are lncRNAs, upregulated: 92 & downregulated: 70
+2179 are protein coding, upregulated: 1118 & downregulated: 1061
+482 are novel, upregulated: 303 & downregulated: 179
+
+Gene Level
+Out of 49998 genes (-1), 19428 have values for differential expression
+1794 are differentially expressed of which:
+Out of all differentially expressed genes:
+250 are lncRNAs, upregulated: 142 & downregulated: 108
+1109 are protein coding, upregulated: 552 & downregulated: 557
+435 are novel, upregulated: 278 & downregulated: 157

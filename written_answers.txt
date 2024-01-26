@@ -1,0 +1,15 @@
+Question 3: How many novel “intergenic” (not overlapping annotated protein coding gene spans) genes have you identified?
+Out of 20662 considered novels, 275 are intergenic, meaning 1.3300 %
+
+Question 2: What percent of your novel transcripts are protein coding?
+If coding potential threshold is 0.364, then:
+Out of 275 intergenic novels, 261 are non coding, meaning 94.9000 %
+and 14 are coding, meaning 5.0900 %
+Out of 20662 considered novels, 7956 are coding, meaning 38.5000 %
+
+Question 1: How good are the 5’ and 3’ annotations of your transcripts?
+70.5300 % of my 5' annotations overlap
+54.3100 % of my 3' annotations overlap
+If considering novel transcripts only:
+44.1500 % of my 5' annotations overlap
+46.8900 % of my 3' annotations overlap

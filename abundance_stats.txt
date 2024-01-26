@@ -1,0 +1,36 @@
+Stats for P1
+total of estimated counts: 2.64344e+07
+number of transcripts detected: 114716
+number of genes detected: 47792
+number of novel transcripts detected: 12714
+number of novel genes detected: 3727
+Stats for H_1_1
+total of estimated counts: 2.75688e+07
+number of transcripts detected: 119232
+number of genes detected: 50432
+number of novel transcripts detected: 13401
+number of novel genes detected: 4164
+Stats for P3
+total of estimated counts: 2.72011e+07
+number of transcripts detected: 116695
+number of genes detected: 48819
+number of novel transcripts detected: 12549
+number of novel genes detected: 3669
+Stats for H_1_5
+total of estimated counts: 2.5349e+07
+number of transcripts detected: 117569
+number of genes detected: 49680
+number of novel transcripts detected: 12933
+number of novel genes detected: 3856
+Stats for H_1_2
+total of estimated counts: 2.70502e+07
+number of transcripts detected: 120986
+number of genes detected: 51087
+number of novel transcripts detected: 13208
+number of novel genes detected: 3918
+Stats for P2
+total of estimated counts: 2.6617e+07
+number of transcripts detected: 115252
+number of genes detected: 47700
+number of novel transcripts detected: 12019
+number of novel genes detected: 3347

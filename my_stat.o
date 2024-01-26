@@ -1,0 +1,23 @@
+The total number of exons is 1905303
+The total number of transcripts is 274604
+The total number of genes is 63376
+The total number of single exon transcript is 27189
+The total number of single transcript gene is 38722
+The total number of single exon gene is 22743
+The total number of novel genes is 11082
+The total number of novel exons is 257310, of which 1028 are unique (belong to single-exon gene)
+The total number of novel transcripts is 21883, of which 1060 are single-exons
+
+
+Now considering annotated chromosomes only:
+
+
+The total number of exons is 1893391
+The total number of transcripts is 273383
+The total number of genes is 62660
+The total number of single exon transcript is 27120
+The total number of single transcript gene is 38245
+The total number of single exon gene is 22674
+The total number of novel genes is 10366
+The total number of novel exons is 245398, of which 959 are unique (belong to single-exon gene)
+The total number of novel transcripts is 20662, of which 991 are single-exons
