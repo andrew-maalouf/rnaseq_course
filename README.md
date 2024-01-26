@@ -1,6 +1,6 @@
 📝 In this study, I aim to identify protein-coding genes and lncRNAs that phenotypically distinguishes the holoclones in the A549 cell line. Therefore, following RNA-seq experiment producing reads, the latter will be used to annotate transcripts from known and novel genes. Next, this annotation will be used to quantify and identify differentially expressed genes and transcripts between the holoclones and the parental line. I aspire to discover candidates that could be targeted to alter the phenotypic trajectories of NSCLC cells.
 
-🔗 Link to fastqc files:
+🔗 Link to fastqc files and trimmed fasta files:
   /data/courses/rnaseq_course/lncRNAs/Project1/users/amaalouf/step1/fastqc/PE
 
 🔗 Link to bam files:
