@@ -33,3 +33,7 @@
   9- written_answers.txt: explicit answers to step6 questions
 
   10- results_of_known_genes.xlsx: table representing the gene level differential expression results for genes mentioned in the paper
+
+  11- five_prime_overlap.bed: novel transcripts with 5' completeness
+
+  12- three_prime_overlap.bed: novel transcripts with 3' completeness
