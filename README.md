@@ -18,7 +18,8 @@
   
   2- differential_expression_stats.txt: differential expression results statistics
   
-  3- end_table.tsv: table including all 20066 novel transcripts on reference chromosomes with their respective transcript level differential expression results + 5' 3' completeness + intergenic + coding potential
+  3- end_table.tsv: table including all 20662 novel transcripts on reference chromosomes with their respective transcript level differential expression results +
+  5' 3' completeness + intergenic + coding potential
   
   4- gene_level_results.txt: differential expression full sleuth results on gene level
   
